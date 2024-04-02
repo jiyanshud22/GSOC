@@ -1,0 +1,71 @@
+parse_xml_to_list <- function(xml_string) {
+  lines <- strsplit(xml_string, "\n")[[1]]
+  
+  # Remove leading and trailing whitespace from each line
+  lines <- trimws(lines)
+  
+  # Remove empty lines
+  lines <- lines[lines != ""]
+  
+  # Initialize an empty list
+  result <- list()
+  current_node <- NULL
+  
+  for (line in lines) {
+    if (grepl("</", line)) {
+      # Closing tag
+      tag <- gsub("</(.*?)>.*", "\\1", line)
+      if (tag == names(current_node)) {
+        current_node <- parent.env(environment(current_node))
+      } else {
+        while (!is.null(current_node)) {
+          current_node <- parent.env(environment(current_node))
+          if (tag == names(current_node)) {
+            break
+          }
+        }
+      }
+    } else if (grepl("<", line)) {
+      # Opening tag
+      tag <- gsub("<(.*?)>.*", "\\1", line)
+      new_node <- list()
+      if (is.null(current_node)) {
+        result[[tag]] <- new_node
+      } else {
+        current_node[[tag]] <- new_node
+        environment(new_node) <- current_node
+      }
+      current_node <- new_node
+    } else {
+      # Text content
+      text <- gsub(".*?>(.*)<.*", "\\1", line)
+      current_node[[length(current_node)]] <- text
+    }
+  }
+  
+  result
+}
+
+# XML string
+z <- '
+<CATALOG>
+  <CD>
+    <TITLE>Empire Burlesque</TITLE>
+    <ARTIST>Bob Dylan</ARTIST>
+    <COUNTRY>USA</COUNTRY>
+    <COMPANY>Columbia</COMPANY>
+    <PRICE>10.90</PRICE>
+    <YEAR>1985</YEAR>
+  </CD>
+  <CD>
+    <TITLE>Hide your heart</TITLE>
+    <ARTIST>Bonnie Tylor</ARTIST>
+    <COUNTRY>UK</COUNTRY>
+    <COMPANY>CBS Records</COMPANY>
+    <PRICE>9.90</PRICE>
+    <YEAR>1988</YEAR>
+  </CD>
+</CATALOG>   
+'
+
+#
